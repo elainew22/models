@@ -2,7 +2,7 @@
 #
 # Author: Evan Juras
 # Date: 4/15/18
-# Description: 
+# Description:
 # This program uses a TensorFlow classifier to perform object detection.
 # It loads the classifier uses it to perform object detection on a Picamera feed.
 # It draws boxes and scores around the objects of interest in each frame from
@@ -124,9 +124,14 @@ if camera_type == 'picamera':
     # Initialize Picamera and grab reference to the raw capture
     camera = PiCamera()
     camera.resolution = (IM_WIDTH,IM_HEIGHT)
-    camera.framerate = 10
+    camera.framerate = 10 #10 frames per second
     rawCapture = PiRGBArray(camera, size=(IM_WIDTH,IM_HEIGHT))
     rawCapture.truncate(0)
+    
+    counter = 0
+    bottomCard = None
+    prevCard = None
+    prevprevCard = None
 
     for frame1 in camera.capture_continuous(rawCapture, format="bgr",use_video_port=True):
 
@@ -143,7 +148,32 @@ if camera_type == 'picamera':
         (boxes, scores, classes, num) = sess.run(
             [detection_boxes, detection_scores, detection_classes, num_detections],
             feed_dict={image_tensor: frame_expanded})
-
+            
+        # add game logic
+        # print classes
+        print (*classes) # should only have one card and they are strings
+        print (*scores)
+        
+        
+        if num != 0:#if a card is detected
+            currCard = classes[0]
+            currScore = scores[0]
+            if bottomCard == None:  #first card placed down
+                bottomCard = classes[0]
+                counter++
+            else if (currCard != prevCard) or (currCard == prevCard and currScore != prevScore):
+                    if currCard == prevCard:
+                        print("doubles")
+                    if counter >= 2 and currCard == prevprevCard:
+                        print("sandwich")
+                    if currCard == bottomCard:
+                        print("top bottom")
+                    counter++
+            if counter > 1:
+                prevprevCard = prevCard
+            prevCard = classes[0]
+            prevScore = scores[0]
+            
         # Draw the results of the detection (aka 'visulaize the results')
         vis_util.visualize_boxes_and_labels_on_image_array(
             frame,
@@ -169,6 +199,7 @@ if camera_type == 'picamera':
             break
 
         rawCapture.truncate(0)
+        
 
     camera.close()
 
