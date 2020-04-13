@@ -81,7 +81,7 @@ category_index = label_map_util.create_category_index(categories)
 detection_graph = tf.Graph()
 with detection_graph.as_default():
     od_graph_def = tf.GraphDef()
-    with tf.gfile.GFile(PATH_TO_CKPT, 'rb') as fid:
+    with tf.io.gfile.GFile(PATH_TO_CKPT, 'rb') as fid:
         serialized_graph = fid.read()
         od_graph_def.ParseFromString(serialized_graph)
         tf.import_graph_def(od_graph_def, name='')
@@ -151,28 +151,33 @@ if camera_type == 'picamera':
             
         # add game logic
         # print classes
-        print (*classes) # should only have one card and they are strings
-        print (*scores)
+        for x in range(len(classes)):
+            print("At index " + str(x))
+            print(np.squeeze(classes[x, 0]).astype(np.int32)) # should only have one card and they are strings
+            print(np.squeeze(scores[x, 0]))
         
-        
+        print("num = " + str(num))
         if num != 0:#if a card is detected
-            currCard = classes[0]
-            currScore = scores[0]
-            if bottomCard == None:  #first card placed down
-                bottomCard = classes[0]
-                counter++
-            else if (currCard != prevCard) or (currCard == prevCard and currScore != prevScore):
+            currCard = classes[0, 0]
+            currScore = scores[0, 0]
+
+            print("outside loop")
+            if bottomCard == None:
+                #first card placed down
+                bottomCard = classes[0, 0]
+                counter += 1
+            elif (currCard != prevCard) or (currCard == prevCard and currScore != prevScore):
                     if currCard == prevCard:
                         print("doubles")
                     if counter >= 2 and currCard == prevprevCard:
                         print("sandwich")
                     if currCard == bottomCard:
                         print("top bottom")
-                    counter++
+                    counter += 1
             if counter > 1:
                 prevprevCard = prevCard
-            prevCard = classes[0]
-            prevScore = scores[0]
+            prevCard = classes[0, 0]
+            prevScore = scores[0, 0]
             
         # Draw the results of the detection (aka 'visulaize the results')
         vis_util.visualize_boxes_and_labels_on_image_array(
