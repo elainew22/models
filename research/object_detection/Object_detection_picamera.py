@@ -142,6 +142,14 @@ def detect():
     camera.capture(stream, format = 'jpeg')
     data = np.frombuffer(stream.getvalue(), dtype=np.uint8)
     frame =cv2.imdecode(data,1)
+    
+    global bottomCard
+    global prevCard
+    global prevprevCard
+    global counter
+    global frame_rate_calc
+    global freq
+    global font
  
 
     # for frame1 in camera.capture_continuous(rawCapture, format="bgr",use_video_port=True):
@@ -162,45 +170,39 @@ def detect():
             
     # add game logic
     # print classes
-    for x in range(len(classes)):
-        print("At index " + str(x))
-        print(np.squeeze(classes[x]).astype(np.int32)) # should only have one card and they are strings
-        print(np.squeeze(scores[x]))
+    print(np.squeeze(classes[0, 0]).astype(np.int32)) # should only have one card and they are strings
+    print(np.squeeze(scores[0, 0]))
         
-    print("num = " + str(num))
     if num != 0:#if a card is detected
         currCard = classes[0,0]
-        currScore = scores[0,0]
 
-        print("outside loop")
 
         if bottomCard == None:
             #first card placed down
             bottomCard = classes[0, 0]
-            counter += 1
-        elif (currCard != prevCard) or (currCard == prevCard and currScore != prevScore):
-            if currCard == prevCard:
-                print("doubles")
-            if counter >= 2 and currCard == prevprevCard:
-                print("sandwich")
-            if currCard == bottomCard:
-                print("top bottom")
-            counter += 1
+            print("set bottom card")
+        elif currCard == prevCard:
+            print("doubles")
+        elif counter >= 2 and currCard == prevprevCard:
+            print("sandwich")
+        elif currCard == bottomCard:
+            print("top bottom")
+        counter += 1
         if counter > 1:
             prevprevCard = prevCard
         prevCard = classes[0, 0]
-        prevScore = scores[0, 0]#or should these be indented?
+
             
     # Draw the results of the detection (aka 'visulaize the results')
     vis_util.visualize_boxes_and_labels_on_image_array(
-            frame,
-            np.squeeze(boxes),
-            np.squeeze(classes).astype(np.int32),
-            np.squeeze(scores),
-            category_index,
-            use_normalized_coordinates=True,
-            line_thickness=8,
-            min_score_thresh=0.40)
+                frame,
+              np.squeeze(boxes),
+              np.squeeze(classes).astype(np.int32),
+                np.squeeze(scores),
+                category_index,
+                use_normalized_coordinates=True,
+              line_thickness=8,
+              min_score_thresh=0.40)
 
     cv2.putText(frame,"FPS: {0:.2f}".format(frame_rate_calc),(30,50),font,1,(255,255,0),2,cv2.LINE_AA)
 
@@ -215,6 +217,7 @@ def detect():
     rawCapture.truncate(0)
 
     print("resetting timer")
+    t = Timer(5.0, detect)
     t.start()
     
 
