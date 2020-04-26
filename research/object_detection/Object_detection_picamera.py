@@ -56,7 +56,7 @@ from utils import visualization_utils as vis_util
 print("naming model...")
 
 # Name of the directory containing the object detection module we're using
-MODEL_NAME = 'card_model_425'
+MODEL_NAME = 'card_model'
 
 # Grab path to current working directory
 CWD_PATH = os.getcwd()
@@ -66,10 +66,10 @@ CWD_PATH = os.getcwd()
 PATH_TO_CKPT = os.path.join(CWD_PATH,MODEL_NAME,'frozen_inference_graph.pb')
 
 # Path to label map file
-PATH_TO_LABELS = os.path.join(CWD_PATH,'data','labelmap.pbtxt')
+PATH_TO_LABELS = os.path.join(CWD_PATH,'data','card_labelmap.pbtxt')
 
 # Number of classes the object detector can identify
-NUM_CLASSES = 52
+NUM_CLASSES = 13
 
 ## Load the label map.
 # Label maps map indices to category names, so that when the convolution
