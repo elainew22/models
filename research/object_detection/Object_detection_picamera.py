@@ -19,6 +19,7 @@
 
 
 # Import packages
+import io
 import os
 import cv2
 import numpy as np
@@ -55,7 +56,7 @@ from utils import visualization_utils as vis_util
 print("naming model...")
 
 # Name of the directory containing the object detection module we're using
-MODEL_NAME = 'card_model'
+MODEL_NAME = 'card_model_425'
 
 # Grab path to current working directory
 CWD_PATH = os.getcwd()
@@ -65,10 +66,10 @@ CWD_PATH = os.getcwd()
 PATH_TO_CKPT = os.path.join(CWD_PATH,MODEL_NAME,'frozen_inference_graph.pb')
 
 # Path to label map file
-PATH_TO_LABELS = os.path.join(CWD_PATH,'data','card_labelmap.pbtxt')
+PATH_TO_LABELS = os.path.join(CWD_PATH,'data','labelmap.pbtxt')
 
 # Number of classes the object detector can identify
-NUM_CLASSES = 13
+NUM_CLASSES = 52
 
 ## Load the label map.
 # Label maps map indices to category names, so that when the convolution
@@ -133,15 +134,15 @@ prevprevCard = None
 
 from threading import Timer
 
-t = Timer(5.0, detect)
-t.start()
-print("first time timer")
-
 def detect():
 
     print("detected")
-    cap = cv2.VideoCapture()
-    ret, frame1 = cap.read()
+    
+    stream = io.BytesIO()
+    camera.capture(stream, format = 'jpeg')
+    data = np.frombuffer(stream.getvalue(), dtype=np.uint8)
+    frame =cv2.imdecode(data,1)
+ 
 
     # for frame1 in camera.capture_continuous(rawCapture, format="bgr",use_video_port=True):
 
@@ -149,7 +150,7 @@ def detect():
         
         # Acquire frame and expand frame dimensions to have shape: [1, None, None, 3]
         # i.e. a single-column array, where each item in the column has the pixel RGB value
-    frame = np.copy(frame1.array)
+   # frame = np.copy(frame1.array)
     frame.setflags(write=1)
     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     frame_expanded = np.expand_dims(frame_rgb, axis=0)
@@ -216,6 +217,11 @@ def detect():
     print("resetting timer")
     t.start()
     
+
+t = Timer(5.0, detect)
+t.start()
+print("first time timer")
+
 
 # Press 'q' to quit
 if cv2.waitKey(1) == ord('q'):
