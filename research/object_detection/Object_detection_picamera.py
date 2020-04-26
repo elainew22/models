@@ -52,6 +52,8 @@ sys.path.append('..')
 from utils import label_map_util
 from utils import visualization_utils as vis_util
 
+print("naming model...")
+
 # Name of the directory containing the object detection module we're using
 MODEL_NAME = 'card_model'
 
@@ -63,10 +65,10 @@ CWD_PATH = os.getcwd()
 PATH_TO_CKPT = os.path.join(CWD_PATH,MODEL_NAME,'frozen_inference_graph.pb')
 
 # Path to label map file
-PATH_TO_LABELS = os.path.join(CWD_PATH,'data','labelmap.pbtxt')
+PATH_TO_LABELS = os.path.join(CWD_PATH,'data','card_labelmap.pbtxt')
 
 # Number of classes the object detector can identify
-NUM_CLASSES = 52
+NUM_CLASSES = 13
 
 ## Load the label map.
 # Label maps map indices to category names, so that when the convolution
@@ -76,6 +78,8 @@ NUM_CLASSES = 52
 label_map = label_map_util.load_labelmap(PATH_TO_LABELS)
 categories = label_map_util.convert_label_map_to_categories(label_map, max_num_classes=NUM_CLASSES, use_display_name=True)
 category_index = label_map_util.create_category_index(categories)
+
+print("Loading tf model...")
 
 # Load the Tensorflow model into memory.
 detection_graph = tf.Graph()
@@ -112,75 +116,82 @@ freq = cv2.getTickFrequency()
 font = cv2.FONT_HERSHEY_SIMPLEX
 
 # Initialize camera and perform object detection.
-# The camera has to be set up and used differently depending on if it's a
-# Picamera or USB webcam.
 
-# I know this is ugly, but I basically copy+pasted the code for the object
-# detection loop twice, and made one work for Picamera and the other work
-# for USB.
-
-### Picamera ###
-if camera_type == 'picamera':
-    # Initialize Picamera and grab reference to the raw capture
-    camera = PiCamera()
-    camera.resolution = (IM_WIDTH,IM_HEIGHT)
-    camera.framerate = 10 #10 frames per second
-    rawCapture = PiRGBArray(camera, size=(IM_WIDTH,IM_HEIGHT))
-    rawCapture.truncate(0)
+print("Starting camera loop...")
+# Initialize Picamera and grab reference to the raw capture
+camera = PiCamera()
+camera.resolution = (IM_WIDTH,IM_HEIGHT)
+camera.framerate = 10 #10 frames per second
+rawCapture = PiRGBArray(camera, size=(IM_WIDTH,IM_HEIGHT))
+rawCapture.truncate(0)
     
-    counter = 0
-    bottomCard = None
-    prevCard = None
-    prevprevCard = None
+counter = 0
+bottomCard = None
+prevCard = None
+prevprevCard = None
 
-    for frame1 in camera.capture_continuous(rawCapture, format="bgr",use_video_port=True):
 
-        t1 = cv2.getTickCount()
+from threading import Timer
+
+t = Timer(5.0, detect)
+t.start()
+print("first time timer")
+
+def detect():
+
+    print("detected")
+    cap = cv2.VideoCapture()
+    ret, frame1 = cap.read()
+
+    # for frame1 in camera.capture_continuous(rawCapture, format="bgr",use_video_port=True):
+
+    t1 = cv2.getTickCount()
         
         # Acquire frame and expand frame dimensions to have shape: [1, None, None, 3]
         # i.e. a single-column array, where each item in the column has the pixel RGB value
-        frame = np.copy(frame1.array)
-        frame.setflags(write=1)
-        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        frame_expanded = np.expand_dims(frame_rgb, axis=0)
+    frame = np.copy(frame1.array)
+    frame.setflags(write=1)
+    frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    frame_expanded = np.expand_dims(frame_rgb, axis=0)
 
         # Perform the actual detection by running the model with the image as input
-        (boxes, scores, classes, num) = sess.run(
+    (boxes, scores, classes, num) = sess.run(
             [detection_boxes, detection_scores, detection_classes, num_detections],
             feed_dict={image_tensor: frame_expanded})
             
-        # add game logic
-        # print classes
-        for x in range(len(classes)):
-            print("At index " + str(x))
-            print(np.squeeze(classes[x, 0]).astype(np.int32)) # should only have one card and they are strings
-            print(np.squeeze(scores[x, 0]))
+    # add game logic
+    # print classes
+    for x in range(len(classes)):
+        print("At index " + str(x))
+        print(np.squeeze(classes[x]).astype(np.int32)) # should only have one card and they are strings
+        print(np.squeeze(scores[x]))
         
-        print("num = " + str(num))
-        if num != 0:#if a card is detected
-            currCard = classes[0, 0]
-            currScore = scores[0, 0]
+    print("num = " + str(num))
+    if num != 0:#if a card is detected
+        currCard = classes[0,0]
+        currScore = scores[0,0]
 
-            print("outside loop")
-            if bottomCard == None:
-                #first card placed down
-                bottomCard = classes[0, 0]
-                counter += 1
-            elif (currCard != prevCard) or (currCard == prevCard and currScore != prevScore):
-                    if currCard == prevCard:
-                        print("doubles")
-                    if counter >= 2 and currCard == prevprevCard:
-                        print("sandwich")
-                    if currCard == bottomCard:
-                        print("top bottom")
-                    counter += 1
-            if counter > 1:
-                prevprevCard = prevCard
-            prevCard = classes[0, 0]
-            prevScore = scores[0, 0]
+        print("outside loop")
+
+        if bottomCard == None:
+            #first card placed down
+            bottomCard = classes[0, 0]
+            counter += 1
+        elif (currCard != prevCard) or (currCard == prevCard and currScore != prevScore):
+            if currCard == prevCard:
+                print("doubles")
+            if counter >= 2 and currCard == prevprevCard:
+                print("sandwich")
+            if currCard == bottomCard:
+                print("top bottom")
+            counter += 1
+        if counter > 1:
+            prevprevCard = prevCard
+        prevCard = classes[0, 0]
+        prevScore = scores[0, 0]#or should these be indented?
             
-        # Draw the results of the detection (aka 'visulaize the results')
-        vis_util.visualize_boxes_and_labels_on_image_array(
+    # Draw the results of the detection (aka 'visulaize the results')
+    vis_util.visualize_boxes_and_labels_on_image_array(
             frame,
             np.squeeze(boxes),
             np.squeeze(classes).astype(np.int32),
@@ -190,71 +201,24 @@ if camera_type == 'picamera':
             line_thickness=8,
             min_score_thresh=0.40)
 
-        cv2.putText(frame,"FPS: {0:.2f}".format(frame_rate_calc),(30,50),font,1,(255,255,0),2,cv2.LINE_AA)
+    cv2.putText(frame,"FPS: {0:.2f}".format(frame_rate_calc),(30,50),font,1,(255,255,0),2,cv2.LINE_AA)
 
-        # All the results have been drawn on the frame, so it's time to display it.
-        cv2.imshow('Object detector', frame)
+    # All the results have been drawn on the frame, so it's time to display it.
+    cv2.imshow('Object detector', frame)
 
-        t2 = cv2.getTickCount()
-        time1 = (t2-t1)/freq
-        frame_rate_calc = 1/time1
+    t2 = cv2.getTickCount()
+    time1 = (t2-t1)/freq
+    frame_rate_calc = 1/time1
 
-        # Press 'q' to quit
-        if cv2.waitKey(1) == ord('q'):
-            break
 
-        rawCapture.truncate(0)
-        
+    rawCapture.truncate(0)
 
+    print("resetting timer")
+    t.start()
+    
+
+# Press 'q' to quit
+if cv2.waitKey(1) == ord('q'):
     camera.close()
-
-### USB webcam ###
-elif camera_type == 'usb':
-    # Initialize USB webcam feed
-    camera = cv2.VideoCapture(0)
-    ret = camera.set(3,IM_WIDTH)
-    ret = camera.set(4,IM_HEIGHT)
-
-    while(True):
-
-        t1 = cv2.getTickCount()
-
-        # Acquire frame and expand frame dimensions to have shape: [1, None, None, 3]
-        # i.e. a single-column array, where each item in the column has the pixel RGB value
-        ret, frame = camera.read()
-        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        frame_expanded = np.expand_dims(frame_rgb, axis=0)
-
-        # Perform the actual detection by running the model with the image as input
-        (boxes, scores, classes, num) = sess.run(
-            [detection_boxes, detection_scores, detection_classes, num_detections],
-            feed_dict={image_tensor: frame_expanded})
-
-        # Draw the results of the detection (aka 'visulaize the results')
-        vis_util.visualize_boxes_and_labels_on_image_array(
-            frame,
-            np.squeeze(boxes),
-            np.squeeze(classes).astype(np.int32),
-            np.squeeze(scores),
-            category_index,
-            use_normalized_coordinates=True,
-            line_thickness=8,
-            min_score_thresh=0.85)
-
-        cv2.putText(frame,"FPS: {0:.2f}".format(frame_rate_calc),(30,50),font,1,(255,255,0),2,cv2.LINE_AA)
-        
-        # All the results have been drawn on the frame, so it's time to display it.
-        cv2.imshow('Object detector', frame)
-
-        t2 = cv2.getTickCount()
-        time1 = (t2-t1)/freq
-        frame_rate_calc = 1/time1
-
-        # Press 'q' to quit
-        if cv2.waitKey(1) == ord('q'):
-            break
-
-    camera.release()
-
-cv2.destroyAllWindows()
+    cv2.destroyAllWindows()
 
