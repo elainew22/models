@@ -29,6 +29,41 @@ import tensorflow.compat.v1 as tf
 tf.disable_v2_behavior()
 import argparse
 import sys
+import serial
+from threading import Timer
+import time
+
+
+# create and open a serial port
+sp = serial.Serial('/dev/ttyUSB0', 9600)
+
+# set the arm to default centered position
+def arm_calibrate():
+    print("calibrating arm")
+    #sp.write("#0 P1500\r".encode())                                                                                                                                      #sp.write("#1 P1700\r".encode())
+    sp.write("#2 P200\r".encode())
+    sp.write("#3 P1300\r".encode())
+    sp.write("#4 P1500\r".encode())
+    #sp.write("#4 P1500\r".encode())
+
+def arm_slap():
+    print("slapping!")
+    # USE most left sp.write("#1 P700\r".encode())                                                                                                                        # most right sp.write("#1 P2300\r".encode())                                                                                                                          #sp.write("#1 P1500\r".encode())                                                                                                                                      #sp.write("#1 P900\r".encode())
+    sp.write("#2 P1700 T500\r".encode())
+
+
+    #sp.write("#4 P1500 S1000 T5000\r".encode())                                                                                                                          #sp.write("#5 P1500 S1000 T5000\r".encode())                                                                                                                          #sp.write("#3 P1500 S1000 T5000\r".encode())                                                                                                                          #sp.write("#3 P1500 S1000 T5000\r".encode())                                                                                                                          #sp.write("#4 P1500\r".encode())                                                                                                                                      #sp.write("#5 P1500\r".encode())
+    time.sleep(5)
+
+    # recalibrate
+    print("recalibrating arm")
+    #sp.write("#0 P1500\r".encode())                                                                                                                                      #sp.write("#1 P1700\r".encode())
+    sp.write("#2 P200\r".encode())
+    sp.write("#3 P1300\r".encode())
+    sp.write("#4 P1500\r".encode())
+    time.sleep(5)
+
+
 
 # Set up camera constants
 IM_WIDTH = 1280
@@ -132,8 +167,6 @@ prevCard = None
 prevprevCard = None
 
 
-from threading import Timer
-
 def detect():
 
     print("detected")
@@ -183,10 +216,16 @@ def detect():
             print("set bottom card")
         elif currCard == prevCard:
             print("doubles")
+            arm_slap()
+            
         elif counter >= 2 and currCard == prevprevCard:
             print("sandwich")
+            arm_slap()
+            
         elif currCard == bottomCard:
             print("top bottom")
+            arm_slap()
+            
         counter += 1
         if counter > 1:
             prevprevCard = prevCard
@@ -207,7 +246,7 @@ def detect():
     cv2.putText(frame,"FPS: {0:.2f}".format(frame_rate_calc),(30,50),font,1,(255,255,0),2,cv2.LINE_AA)
 
     # All the results have been drawn on the frame, so it's time to display it.
-    cv2.imshow('Object detector', frame)
+    # cv2.imshow('Object detector', frame)
 
     t2 = cv2.getTickCount()
     time1 = (t2-t1)/freq
@@ -224,7 +263,7 @@ def detect():
 t = Timer(5.0, detect)
 t.start()
 print("first time timer")
-
+arm_calibrate()
 
 # Press 'q' to quit
 if cv2.waitKey(1) == ord('q'):
