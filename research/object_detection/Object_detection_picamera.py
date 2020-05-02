@@ -35,31 +35,67 @@ sp = serial.Serial('/dev/ttyUSB0', 9600)
 # set the arm to default centered position
 def arm_calibrate():
     print("calibrating arm")
-    #sp.write("#0 P1500\r".encode())                                                                                                                                      #sp.write("#1 P1700\r".encode())
-    sp.write("#2 P200\r".encode())
-    sp.write("#3 P1300\r".encode())
-    sp.write("#4 P1500\r".encode())
-    #sp.write("#4 P1500\r".encode())
+   
+def arm_deal():
+    arm_calibrate() # calling here so that we begin where the arm already is-that way it doesn't snap super fast and damage itself
+    # deal calibration
+    sp.write("#0 P900 #1 P500 #2 P1650 #3 P400 #4 P800\r T1000".encode())
+    print("dealing card")
 
+    # engage suction and raise
+    sp.write("#4 P2600 T500\r".encode())
+    time.sleep(0.5)
+    sp.write("#2 P1470 T500\r".encode())
+    time.sleep(2)
+    #shake
+    sp.write("#0 P850 T80\r".encode())
+    time.sleep(0.1)
+    sp.write("#0 P930 T80\r".encode())
+    time.sleep(0.1)
+    sp.write("#0 P900 T80\r".encode())
+    time.sleep(1)
+
+    # lift
+    sp.write("#1 P800 T750\r".encode())
+    #sp.write("#2 P1200 T200\r".encode())
+    
+    # move over pile
+    time.sleep(1)
+    sp.write("#0 P500 #3 P2400 T1500\r".encode())
+    time.sleep(1.5)
+    sp.write("#2 P2300 T1000\r".encode())
+    time.sleep(1)
+    # drop
+    sp.write("#4 P800 T200\r".encode())
+    time.sleep(1)
+
+    # return to pile
+    sp.write("#2 P1700 #4 P800 T1000\r".encode())
+    time.sleep(1)
+    sp.write("#0 P900 #3 P400 T1000\r".encode())
+    time.sleep(1)
+    sp.write("#1 P500 #2 P1650  T1000\r".encode())
+
+    
 def arm_slap():
+    arm_calibrate()
     print("slapping!")
-    # USE most left sp.write("#1 P700\r".encode())                                                                                                                        # most right sp.write("#1 P2300\r".encode())                                                                                                                          #sp.write("#1 P1500\r".encode())                                                                                                                                      #sp.write("#1 P900\r".encode())
-    sp.write("#2 P1700 T500\r".encode())
+    # slap
+
+    arm_calibrate()
+
+def arm_collect():
+    # collect code here
+
+    # call deal here at the end? is it robot's turn after correct slap or gameplay turn?
+
+################################
+### GAMEPLAY ###
+
+NUMBER_PLAYERS = 2
 
 
-    #sp.write("#4 P1500 S1000 T5000\r".encode())                                                                                                                          #sp.write("#5 P1500 S1000 T5000\r".encode())                                                                                                                          #sp.write("#3 P1500 S1000 T5000\r".encode())                                                                                                                          #sp.write("#3 P1500 S1000 T5000\r".encode())                                                                                                                          #sp.write("#4 P1500\r".encode())                                                                                                                                      #sp.write("#5 P1500\r".encode())
-    time.sleep(5)
-
-    # recalibrate
-    print("recalibrating arm")
-    #sp.write("#0 P1500\r".encode())                                                                                                                                      #sp.write("#1 P1700\r".encode())
-    sp.write("#2 P200\r".encode())
-    sp.write("#3 P1300\r".encode())
-    sp.write("#4 P1500\r".encode())
-    time.sleep(5)
-
-
-
+    
 # Set up camera constants
 IM_WIDTH = 1280
 IM_HEIGHT = 720
@@ -217,6 +253,7 @@ def detect():
             bottomCard = None
             prevCard = None
             prevprevCard = None
+            # arm_collect()
             
         elif counter >= 2 and currCard == prevprevCard:
             print("sandwich")
@@ -226,6 +263,7 @@ def detect():
             bottomCard = None
             prevCard = None
             prevprevCard = None
+            # arm_collect()
 
             
         elif currCard == bottomCard:
@@ -236,6 +274,8 @@ def detect():
             bottomCard = None
             prevCard = None
             prevprevCard = None
+            # arm_collect()
+
 
         counter += 1
         if counter > 1:
