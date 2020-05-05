@@ -196,6 +196,7 @@ counter = 0
 bottomCard = None
 prevCard = None
 prevprevCard = None
+counterTurn = 1
 
 
 def detect():
@@ -214,6 +215,7 @@ def detect():
     global frame_rate_calc
     global freq
     global font
+    global counterTurn
  
 
     # for frame1 in camera.capture_continuous(rawCapture, format="bgr",use_video_port=True):
@@ -247,34 +249,47 @@ def detect():
             print("set bottom card")
         elif currCard == prevCard:
             print("doubles")
-            arm_slap()
+           # arm_slap()
             # reset
             counter = 0
             bottomCard = None
             prevCard = None
             prevprevCard = None
+            counterTurn = 1
             # arm_collect()
+            t = Timer(5.0, detect)
+            t.start()
+            return
+            
             
         elif counter >= 2 and currCard == prevprevCard:
             print("sandwich")
-            arm_slap()
+           # arm_slap()
             # reset
             counter = 0
             bottomCard = None
             prevCard = None
             prevprevCard = None
+            counterTurn = 1
             # arm_collect()
+            t = Timer(5.0, detect)
+            t.start()
+            return
 
             
         elif currCard == bottomCard:
             print("top bottom")
-            arm_slap()
+          #  arm_slap()
             # reset
             counter = 0
             bottomCard = None
             prevCard = None
             prevprevCard = None
+            counterTurn = 1
             # arm_collect()
+            t = Timer(5.0, detect)
+            t.start()
+            return
 
 
         counter += 1
@@ -306,6 +321,10 @@ def detect():
 
     rawCapture.truncate(0)
 
+    counterTurn++
+    if (counterTurn == NUMBER_PLAYERS)
+        # arm_deal()
+        counterTurn = 1
     print("resetting timer")
     t = Timer(5.0, detect)
     t.start()
@@ -314,7 +333,7 @@ def detect():
 t = Timer(5.0, detect)
 t.start()
 print("first time timer")
-arm_calibrate()
+# arm_calibrate()
 
 # Press 'q' to quit
 if cv2.waitKey(1) == ord('q'):
