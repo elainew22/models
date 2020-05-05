@@ -30,7 +30,7 @@ import time
 
 
 # create and open a serial port
-sp = serial.Serial('/dev/ttyUSB0', 9600)
+#sp = serial.Serial('/dev/ttyUSB0', 9600)
 
 # set the arm to default centered position
 def arm_calibrate():
@@ -84,14 +84,13 @@ def arm_slap():
 
     arm_calibrate()
 
-def arm_collect():
+#def arm_collect():
     # collect code here
 
     # call deal here at the end? is it robot's turn after correct slap or gameplay turn?
 
 ################################
 ### GAMEPLAY ###
-
 NUMBER_PLAYERS = 2
 
 
@@ -321,10 +320,11 @@ def detect():
 
     rawCapture.truncate(0)
 
-    counterTurn++
-    if (counterTurn == NUMBER_PLAYERS)
+    counterTurn+=1
+    if counterTurn == NUMBER_PLAYERS:
         # arm_deal()
         counterTurn = 1
+        print("dealing")
     print("resetting timer")
     t = Timer(5.0, detect)
     t.start()
