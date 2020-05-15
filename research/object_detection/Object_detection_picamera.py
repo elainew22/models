@@ -3,8 +3,7 @@
 # Description:
 # This program uses a TensorFlow classifier to perform card detection.
 # It loads the classifier uses it to perform card detection on frames from a Picamera feed.
-# It draws boxes and scores around the objects of interest in each frame from
-# the Picamera. 
+# It runs the Egyptian Ratslap logic code and actuates the robotic arm to deal or slap when appropriate.
 
 ## Some of the code is copied from Google's example at
 ## https://github.com/tensorflow/models/blob/master/research/object_detection/object_detection_tutorial.ipynb
@@ -87,7 +86,7 @@ def arm_slap():
 #def arm_collect():
     # collect code here
 
-    # call deal here at the end? is it robot's turn after correct slap or gameplay turn?
+    # is it robot's turn after correct slap or gameplay turn?
 
 ################################
 ### GAMEPLAY ###
@@ -137,8 +136,6 @@ PATH_TO_LABELS = os.path.join(CWD_PATH,'data','card_labelmap.pbtxt')
 NUM_CLASSES = 13
 
 ## Load the label map.
-# Label maps map indices to category names, so that when the convolution
-# network predicts `5`, we know that this corresponds to `airplane`.
 # Here we use internal utility functions, but anything that returns a
 # dictionary mapping integers to appropriate string labels would be fine
 label_map = label_map_util.load_labelmap(PATH_TO_LABELS)
@@ -216,9 +213,6 @@ def detect():
     global font
     global counterTurn
  
-
-    # for frame1 in camera.capture_continuous(rawCapture, format="bgr",use_video_port=True):
-
     t1 = cv2.getTickCount()
         
         # Acquire frame and expand frame dimensions to have shape: [1, None, None, 3]
@@ -233,9 +227,8 @@ def detect():
             [detection_boxes, detection_scores, detection_classes, num_detections],
             feed_dict={image_tensor: frame_expanded})
             
-    # add game logic
     # print classes
-    print(np.squeeze(classes[0, 0]).astype(np.int32)) # should only have one card and they are strings
+    print(np.squeeze(classes[0, 0]).astype(np.int32)) 
     print(np.squeeze(scores[0, 0]))
         
     if num != 0:#if a card is detected
